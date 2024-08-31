@@ -1,0 +1,68 @@
+# Arquivos de compilação
+*.o
+*.out
+
+# Arquivos gerados pelo IDE
+.idea/
+.vscode/
+
+# Dependências
+/node_modules/
+/package-lock.json
+
+# Arquivos de log
+*.log
+
+# Arquivos de configuração
+.env
+
+# Arquivos de build
+/build/
+
+# Arquivos temporários
+.tmp/
+
+# Arquivos de backup
+*.bak
+
+# Arquivos de cache
+.cache/
+
+# Arquivos de documentação
+/docs/
+
+# Arquivos de teste
+/test/
+
+# Arquivos de dados sensíveis
+*.key
+*.pem
+
+# Arquivos de imagem
+*.jpg
+*.png
+*.gif
+
+# Arquivos de vídeo
+*.mp4
+*.avi
+
+# Arquivos de áudio
+*.mp3
+*.wav
+
+# Arquivos de texto
+*.txt
+
+# Arquivos de planilha
+*.csv
+*.xlsx
+
+# Arquivos de apresentação
+*.pptx
+
+# Arquivos de documento
+*.docx
+
+# Arquivos de PDF
+*.pdf
