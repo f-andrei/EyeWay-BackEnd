@@ -1,0 +1,38 @@
+CREATE SCHEMA `EyeWay` DEFAULT CHARACTER SET Default Collation ;
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE cameras (
+    camera_id INT AUTO_INCREMENT PRIMARY KEY,
+    location VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(255) NOT NULL,
+    status BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE infractions (
+    infraction_id INT AUTO_INCREMENT PRIMARY KEY,
+    camera_id INT NOT NULL,
+    infraction_type VARCHAR(50) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    image_base64 TEXT NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camera_id, location) REFERENCES cameras(camera_id, location)
+);
+
+CREATE TABLE InfractionsStats (
+    stat_id INT AUTO_INCREMENT PRIMARY KEY,
+    camera_id INT NOT NULL,
+    infraction_type VARCHAR(50) NOT NULL,
+    count INT DEFAULT 0,
+    period VARCHAR(20) NOT NULL,
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camera_id) REFERENCES Cameras(camera_id)
+);
