@@ -1,4 +1,5 @@
-CREATE SCHEMA `EyeWay` DEFAULT CHARACTER SET Default Collation ;
+CREATE SCHEMA `EyeWay` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
+USE `EyeWay`;
 
 CREATE TABLE users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -22,9 +23,8 @@ CREATE TABLE infractions (
     infraction_type VARCHAR(50) NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     image_base64 TEXT NOT NULL,
-    location VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (camera_id, location) REFERENCES cameras(camera_id, location)
+    FOREIGN KEY (camera_id) REFERENCES cameras(camera_id)
 );
 
 CREATE TABLE InfractionsStats (
