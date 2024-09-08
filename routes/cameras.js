@@ -4,9 +4,9 @@ const db = require('../config/ConnectDatabase');
 
 
 router.post('/cameras', (req, res) => {
-    const { location, ip_address, status } = req.body;
-    const query = 'INSERT INTO cameras (location, ip_address, status) VALUES (?, ?, ?)';
-    db.query(query, [location, ip_address, status], (err, result) => {
+    const { camera_id, location, ip_address, status } = req.body;
+    const query = 'INSERT INTO cameras (camera_id, location, ip_address, status) VALUES (?, ?, ?, ?)';
+    db.query(query, [camera_id, location, ip_address, status], (err, result) => {
         if (err) return res.status(500).json(err);
         res.status(201).json({ camera_id: result.insertId });
         console.log("Câmera " + ip_address + " adicionada com sucesso!");
@@ -35,9 +35,9 @@ router.get('/cameras/:id', (req, res) => {
 
 router.put('/cameras/:id', (req, res) => {
     const { id } = req.params;
-    const { location, ip_address, status } = req.body;
-    const query = 'UPDATE cameras SET location = ?, ip_address = ?, status = ? WHERE camera_id = ?';
-    db.query(query, [location, ip_address, status, id], (err, result) => {
+    const { camera_id, location, ip_address, status } = req.body;
+    const query = 'UPDATE cameras SET camera_id, location = ?, ip_address = ?, status = ? WHERE camera_id = ?';
+    db.query(query, [camera_id, location, ip_address, status, id], (err, result) => {
         if (err) return res.status(500).json(err);
         res.status(200).json({ message: 'Camera updated' });
         console.log("Câmera " + id + " atualizada com sucesso!");

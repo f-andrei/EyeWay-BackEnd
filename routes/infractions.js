@@ -4,10 +4,14 @@ const db = require('../config/ConnectDatabase');
 
 
 router.post('/infractions', (req, res) => {
-    const { camera_id, infraction_type, timestamp, image_base64 } = req.body;
-    const query = 'INSERT INTO infractions (camera_id, infraction_type, timestamp, image_base64) VALUES (?, ?, ?, ?)';
-    db.query(query, [camera_id, infraction_type, timestamp, image_base64], (err, result) => {
-        if (err) return res.status(500).json(err);
+    const { camera_id, vehicle_type, infraction_type, timestamp, image_base64 } = req.body;
+    const imageBuffer = Buffer.from(image_base64, 'base64');
+    const query = 'INSERT INTO infractions (camera_id, vehicle_type, infraction_type, timestamp, image_bytes) VALUES (?, ?, ?, ?, ?)';
+    db.query(query, [camera_id, vehicle_type, infraction_type, timestamp, imageBuffer], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json(err);            
+        }
         res.status(201).json({ infraction_id: result.insertId });
         console.log("Infração " + infraction_type + " adicionada com sucesso!");
     });
@@ -35,9 +39,9 @@ router.get('/infractions/:id', (req, res) => {
 
 router.put('/infractions/:id', (req, res) => {
     const { id } = req.params;
-    const { camera_id, infraction_type, timestamp, image_base64 } = req.body;
-    const query = 'UPDATE infractions SET camera_id = ?, infraction_type = ?, timestamp = ?, image_base64 = ? WHERE infraction_id = ?';
-    db.query(query, [camera_id, infraction_type, timestamp, image_base64, id], (err, result) => {
+    const { camera_id, vehicle_type, infraction_type, timestamp, image_bytes } = req.body;
+    const query = 'UPDATE infractions SET camera_id = ?, vehicle_type = ?, infraction_type = ?, timestamp = ?, image_bytes = ? WHERE infraction_id = ?';
+    db.query(query, [camera_id, vehicle_type, infraction_type, timestamp, image_bytes, id], (err, result) => {
         if (err) return res.status(500).json(err);
         res.status(200).json({ message: 'Infraction updated' });
         console.log("Infração " + id + " atualizada com sucesso!");

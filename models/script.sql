@@ -10,7 +10,8 @@ CREATE TABLE users (
 );
 
 CREATE TABLE cameras (
-    camera_id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    camera_id INT NOT NULL,
     location VARCHAR(255) NOT NULL,
     ip_address VARCHAR(255) NOT NULL,
     status BOOLEAN DEFAULT TRUE,
@@ -20,19 +21,19 @@ CREATE TABLE cameras (
 CREATE TABLE infractions (
     infraction_id INT AUTO_INCREMENT PRIMARY KEY,
     camera_id INT NOT NULL,
+    vehicle_type VARCHAR(50) NOT NULL,
     infraction_type VARCHAR(50) NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    image_base64 TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (camera_id) REFERENCES cameras(camera_id)
+    image_bytes LONGBLOB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE InfractionsStats (
     stat_id INT AUTO_INCREMENT PRIMARY KEY,
     camera_id INT NOT NULL,
+    vehicle_type VARCHAR(50) NOT NULL,
     infraction_type VARCHAR(50) NOT NULL,
     count INT DEFAULT 0,
     period VARCHAR(20) NOT NULL,
-    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (camera_id) REFERENCES Cameras(camera_id)
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
