@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/ConnectDatabase');
+const db = require('../config/connectDataBase');
 
 
 router.post('/users', (req, res) => {
