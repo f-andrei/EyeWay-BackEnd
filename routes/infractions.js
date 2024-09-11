@@ -21,7 +21,18 @@ router.get('/infractions', (req, res) => {
     const query = 'SELECT * FROM infractions';
     db.query(query, (err, results) => {
         if (err) return res.status(500).json(err);
-        res.status(200).json(results);
+        
+        const infractionsWithBase64 = results.map(infraction => {
+            return {
+                camera_id: infraction.camera_id,
+                vehicle_type: infraction.vehicle_type,
+                infraction_type: infraction.infraction_type,
+                timestamp: infraction.timestamp,
+                image_base64: Buffer.from(infraction.image_bytes).toString('base64') 
+            };
+        });
+        
+        res.status(200).json(infractionsWithBase64);
         console.log("Infrações listadas com sucesso!");
     });
 });
@@ -32,7 +43,16 @@ router.get('/infractions/:id', (req, res) => {
     db.query(query, [id], (err, result) => {
         if (err) return res.status(500).json(err);
         if (result.length === 0) return res.status(404).json({ message: 'Infraction not found' });
-        res.status(200).json(result[0]);
+
+        const infraction = {
+            camera_id: result[0].camera_id,
+            vehicle_type: result[0].vehicle_type,
+            infraction_type: result[0].infraction_type,
+            timestamp: result[0].timestamp,
+            image_base64: Buffer.from(result[0].image_bytes).toString('base64')
+        };
+
+        res.status(200).json(infraction);
         console.log("Infração " + id + " listada com sucesso!");
     });
 });
