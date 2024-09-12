@@ -2,6 +2,22 @@ const express = require('express');
 const app = express();
 const data = require('./sampleBase64');
 
+const logger = require('./logger');
+
+//const obj = { name: 'luiztools' }
+
+const obj = undefined; //descomente essa linha para provocar o erro
+
+
+try {
+    console.log(obj.name);
+    logger.info('tudo funcionando!');
+}
+catch (error) {
+    logger.error(error);
+}
+
+
 const userRoutes = require('./routes/users');
 const cameraRoutes = require('./routes/cameras');
 const infractionRoutes = require('./routes/infractions');
