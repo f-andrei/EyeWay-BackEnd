@@ -1,25 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/connectDataBase');
+const logger = require('../logger');
+
 
 router.post('/video', (req, res) => {
     const { url } = req.body;
     const query = 'INSERT INTO video (video_url) VALUES (?)';
     db.query(query, [url], (err, result) => {
         if (err) {
-            console.log(err);
+            logger.error(err);
             return res.status(500).json(err);
         }
             res.status(201).json({ url });
-        console.log("Usuário " +  + " enviado com sucesso!");
+        console.log("Video " + url + " enviado com sucesso!");
     });
 });
 
 router.get('/video', (req,res)  => {
     const query = 'SELECT * FROM video';
     db.query(query, [], (err,result) => {
-        if (err){
-            console.log(err);
+        if (err) {
+            logger.error(err);
             return res.status(500).json(err);
         } 
         console
