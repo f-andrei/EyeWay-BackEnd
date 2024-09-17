@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/connectDataBase');
+const logger = require('../logger');
 
 
 router.post('/infractions', (req, res) => {
@@ -9,7 +10,7 @@ router.post('/infractions', (req, res) => {
     const query = 'INSERT INTO infractions (camera_id, vehicle_type, infraction_type, timestamp, image_bytes) VALUES (?, ?, ?, ?, ?)';
     db.query(query, [camera_id, vehicle_type, infraction_type, timestamp, imageBuffer], (err, result) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             return res.status(500).json(err);            
         }
         res.status(201).json({ infraction_id: result.insertId });
@@ -20,7 +21,10 @@ router.post('/infractions', (req, res) => {
 router.get('/infractions', (req, res) => {
     const query = 'SELECT * FROM infractions';
     db.query(query, (err, results) => {
-        if (err) return res.status(500).json(err);
+        if (err) {
+            logger.error(err);
+            return res.status(500).json(err);
+        }
         
         const infractionsWithBase64 = results.map(infraction => {
             return {
@@ -41,7 +45,10 @@ router.get('/infractions/:id', (req, res) => {
     const { id } = req.params;
     const query = 'SELECT * FROM infractions WHERE infraction_id = ?';
     db.query(query, [id], (err, result) => {
-        if (err) return res.status(500).json(err);
+        if (err) {
+            logger.error(err);
+            return res.status(500).json(err);
+        }
         if (result.length === 0) return res.status(404).json({ message: 'Infraction not found' });
 
         const infraction = {
@@ -62,7 +69,10 @@ router.put('/infractions/:id', (req, res) => {
     const { camera_id, vehicle_type, infraction_type, timestamp, image_bytes } = req.body;
     const query = 'UPDATE infractions SET camera_id = ?, vehicle_type = ?, infraction_type = ?, timestamp = ?, image_bytes = ? WHERE infraction_id = ?';
     db.query(query, [camera_id, vehicle_type, infraction_type, timestamp, image_bytes, id], (err, result) => {
-        if (err) return res.status(500).json(err);
+        if (err) {
+            logger.error(err);
+            return res.status(500).json(err);
+        }
         res.status(200).json({ message: 'Infraction updated' });
         console.log("Infração " + id + " atualizada com sucesso!");
     });
@@ -73,7 +83,10 @@ router.delete('/infractions/:id', (req, res) => {
     const { id } = req.params;
     const query = 'DELETE FROM infractions WHERE infraction_id = ?';
     db.query(query, [id], (err, result) => {
-        if (err) return res.status(500).json(err);
+        if (err) {
+            logger.error(err);
+            return res.status(500).json(err);
+        }
         res.status(200).json({ message: 'Infraction deleted' });
         console.log("Infração " + id + " deletada com sucesso!");
     });
