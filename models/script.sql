@@ -33,8 +33,8 @@ CREATE TABLE InfractionsStats (
     camera_id INT NOT NULL,
     vehicle_type VARCHAR(50) NOT NULL,
     infraction_type VARCHAR(50) NOT NULL,
-    count INT DEFAULT 0,
+    count INT NOT NULL,
     period VARCHAR(20) NOT NULL,
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (camera_id) REFERENCES Cameras(camera_id)
+    FOREIGN KEY (camera_id) REFERENCES cameras(id)
 );
