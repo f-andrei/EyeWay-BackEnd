@@ -2,19 +2,25 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/connectDataBase');
 const logger = require('../logger');
+const { log } = require('winston');
 
 
 router.post('/infractions', (req, res) => {
-    const { camera_id, vehicle_type, infraction_type, timestamp, image_base64 } = req.body;
+    const { camera_id, vehicle_type, infraction_type, image_base64 } = req.body;
     const imageBuffer = Buffer.from(image_base64, 'base64');
-    const query = 'INSERT INTO infractions (camera_id, vehicle_type, infraction_type, timestamp, image_bytes) VALUES (?, ?, ?, ?, ?)';
-    db.query(query, [camera_id, vehicle_type, infraction_type, timestamp, imageBuffer], (err, result) => {
+    
+    if (!camera_id || !vehicle_type || !infraction_type || !image_base64) {
+        logger.info('Todos os campos são obrigatórios: camera_id, vehicle_type, infraction_type, image_base64.');
+        return res.status(400).json({ message: 'Todos os campos são obrigatórios: camera_id, vehicle_type, infraction_type, image_base64.' });
+    }
+    const query = 'INSERT INTO infractions (camera_id, vehicle_type, infraction_type, image_bytes) VALUES (?, ?, ?, ?)';
+    db.query(query, [camera_id, vehicle_type, infraction_type, imageBuffer], (err, result) => {
         if (err) {
             logger.error(err);
-            return res.status(500).json(err);            
+            return res.status(500).json({ message: 'Erro ao criar a infração.' });            
         }
+        logger.info("Infração " + camera_id + " adicionada com sucesso!");
         res.status(201).json({ infraction_id: result.insertId });
-        console.log("Infração " + infraction_type + " adicionada com sucesso!");
     });
 });
 
@@ -23,7 +29,7 @@ router.get('/infractions', (req, res) => {
     db.query(query, (err, results) => {
         if (err) {
             logger.error(err);
-            return res.status(500).json(err);
+            return res.status(500).json({ message: 'Erro ao listar as infrações.' });
         }
         
         const infractionsWithBase64 = results.map(infraction => {
@@ -36,8 +42,8 @@ router.get('/infractions', (req, res) => {
             };
         });
         
+        logger.info('Infrações listadas com sucesso!');
         res.status(200).json(infractionsWithBase64);
-        console.log("Infrações listadas com sucesso!");
     });
 });
 
@@ -47,7 +53,7 @@ router.get('/infractions/:id', (req, res) => {
     db.query(query, [id], (err, result) => {
         if (err) {
             logger.error(err);
-            return res.status(500).json(err);
+            return res.status(500).json({ message: 'Erro ao listar a infração.' });
         }
         if (result.length === 0) return res.status(404).json({ message: 'Infraction not found' });
 
@@ -59,23 +65,29 @@ router.get('/infractions/:id', (req, res) => {
             image_base64: Buffer.from(result[0].image_bytes).toString('base64')
         };
 
+        logger.info("Infração " + id + " listada com sucesso!");
         res.status(200).json(infraction);
-        console.log("Infração " + id + " listada com sucesso!");
     });
 });
 
 router.put('/infractions/:id', (req, res) => {
     const { id } = req.params;
-    const { camera_id, vehicle_type, infraction_type, timestamp, image_bytes } = req.body;
-    const query = 'UPDATE infractions SET camera_id = ?, vehicle_type = ?, infraction_type = ?, timestamp = ?, image_bytes = ? WHERE infraction_id = ?';
-    db.query(query, [camera_id, vehicle_type, infraction_type, timestamp, image_bytes, id], (err, result) => {
+    const { camera_id, vehicle_type, infraction_type, image_bytes } = req.body;
+
+    if (!camera_id || !vehicle_type || !infraction_type || !image_bytes) {
+        logger.info('Todos os campos são obrigatórios: camera_id, vehicle_type, infraction_type, timestamp, image_base64.');
+        return res.status(400).json({ message: 'Todos os campos são obrigatórios: camera_id, vehicle_type, infraction_type, timestamp, image_base64.' });
+    }
+
+    const query = 'UPDATE infractions SET camera_id = ?, vehicle_type = ?, infraction_type = ?, image_bytes = ? WHERE infraction_id = ?';
+    db.query(query, [camera_id, vehicle_type, infraction_type, image_bytes, id], (err, result) => {
         if (err) {
             logger.error(err);
-            return res.status(500).json(err);
+            return res.status(500).json({ message: 'Erro ao atualizar a infração.' });
         }
-        res.status(200).json({ message: 'Infraction updated' });
-        console.log("Infração " + id + " atualizada com sucesso!");
-    });
+
+        logger.info("Infraction " + id + " updated!");
+        res.status(200).json({ message: 'Infraction updated' });    });
 });
 
 
@@ -85,10 +97,11 @@ router.delete('/infractions/:id', (req, res) => {
     db.query(query, [id], (err, result) => {
         if (err) {
             logger.error(err);
-            return res.status(500).json(err);
+            return res.status(500).json({ message: 'Erro ao deletar a infração.' });
         }
+
+        logger.info("Infraction " + id + " deleted!");
         res.status(200).json({ message: 'Infraction deleted' });
-        console.log("Infração " + id + " deletada com sucesso!");
     });
 });
 
