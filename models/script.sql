@@ -38,7 +38,3 @@ CREATE TABLE InfractionsStats (
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (camera_id) REFERENCES Cameras(camera_id)
 );
-CREATE TABLE video(
-    video_id INT AUTO_INCREMENT PRIMARY KEY,
-    video_url VARCHAR(200) NOT NULL
-)
