@@ -9,23 +9,25 @@ router.post('/infractions', (req, res) => {
     const { camera_id, vehicle_type, infraction_type, image_base64 } = req.body;
     const imageBuffer = Buffer.from(image_base64, 'base64');
     
-    if (!camera_id || !vehicle_type || !infraction_type || !image_base64) {
-        logger.info('Todos os campos são obrigatórios: camera_id, vehicle_type, infraction_type, image_base64.');
-        return res.status(400).json({ message: 'Todos os campos são obrigatórios: camera_id, vehicle_type, infraction_type, image_base64.' });
-    }
+    // if (!camera_id || !vehicle_type || !infraction_type || !image_base64) {
+    //     logger.info('Todos os campos são obrigatórios: camera_id, vehicle_type, infraction_type, image_base64.');
+
+    //     return res.status(400).json({ message: 'Todos os campos são obrigatórios: camera_id, vehicle_type, infraction_type, image_base64.' });
+    // }
     const query = 'INSERT INTO infractions (camera_id, vehicle_type, infraction_type, image_bytes) VALUES (?, ?, ?, ?)';
     db.query(query, [camera_id, vehicle_type, infraction_type, imageBuffer], (err, result) => {
         if (err) {
             logger.error(err);
             return res.status(500).json({ message: 'Erro ao criar a infração.' });            
         }
-        logger.info("Infração " + camera_id + " adicionada com sucesso!");
+        logger.info("Infração " + infraction_type + " adicionada com sucesso!");
         res.status(201).json({ infraction_id: result.insertId });
     });
 });
 
 router.get('/infractions', (req, res) => {
-    const query = 'SELECT * FROM infractions';
+    const query = 'SELECT * FROM infractions ORDER BY timestamp DESC LIMIT 5';
+    
     db.query(query, (err, results) => {
         if (err) {
             logger.error(err);
@@ -42,7 +44,7 @@ router.get('/infractions', (req, res) => {
             };
         });
         
-        logger.info('Infrações listadas com sucesso!');
+        logger.info('Últimas 5 infrações listadas com sucesso!');
         res.status(200).json(infractionsWithBase64);
     });
 });
