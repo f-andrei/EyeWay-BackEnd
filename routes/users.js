@@ -2,22 +2,26 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/connectDataBase');
 const logger = require('../logger');
-
-
+const jose = require('jose');
+const crypto = require('node:crypto');
+const secret = crypto.createSecretKey("senha","utf-8"); 
 router.post('/users', (req, res) => {
-    const { name, email, password_hash} = req.body;
+    const { nome, email, senha} = req.body;
 
-    if (!name || !email || !password_hash) {
-        logger.info('Todos os campos são obrigatórios: name, email, password_hash.');
-        return res.status(400).json({ message: 'Todos os campos são obrigatórios: name, email, password_hash.' });
+    if (!nome || !email || !senha) {
+        logger.info('Todos os campos são obrigatórios: nome, email, senha.');
+        return res.status(400).json({ message: 'Todos os campos são obrigatórios: nome, email, senha.' });
     }
+
+    const hash = crypto.createHash("sha256")
+    const password_hash = hash.update(senha).digest("hex");
 
     const query = 'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)';
 
-    db.query(query, [name, email, password_hash], (err, result) => {
+    db.query(query, [nome, email, password_hash], (err, result) => {
 
         if (err) {
-
+            console.log(err)
             if (err.code === 'ER_DUP_ENTRY') {
                 logger.info('Usuário com e-mail já cadastrado.');
                 return res.status(400).json({ message: 'Usuário com este e-mail já cadastrado.' });
@@ -27,11 +31,36 @@ router.post('/users', (req, res) => {
             return res.status(500).json({ message: 'Erro ao criar o usuário.' });
         }
         
-        logger.info("Usuário " + name + " criado com sucesso!");
+        logger.info("Usuário " + nome + " criado com sucesso!");
         res.status(201).json({ user_id: result.insertId });
     });
 });
 
+router.post('/login', (req, res) => {
+    const { email, senha} = req.body;
+
+    if (!email || !senha) {
+        logger.info('Todos os campos são obrigatórios: email e password_hash.');
+        return res.status(400).json({ message: 'Todos os campos são obrigatórios: email, password_hash.' });
+    }
+
+    const hash = crypto.createHash("sha256")
+    const password_hash = hash.update(senha).digest("hex");
+
+    const query = 'SELECT * FROM users WHERE email =  ? AND password_hash = ?';
+
+    db.query(query, [ email, password_hash], async (err, result) => {
+        console.log(email,password_hash,err);
+        if (err) {
+            logger.error(err);
+            return res.status(500).json({ message: 'Email ou senha está incorreto.' });
+        }
+        
+        const jwt = await new jose.SignJWT({email}).setExpirationTime("1d").setProtectedHeader({alg:"HS256"}).sign(secret);
+        logger.info("Usuário " + " Logado com sucesso!");
+        res.status(201).json({ token:jwt });
+    });
+});
 
 router.get('/users', (req, res) => {
     const query = 'SELECT * FROM users';
