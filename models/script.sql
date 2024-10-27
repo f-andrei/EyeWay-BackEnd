@@ -39,12 +39,6 @@ CREATE TABLE InfractionsStats (
     FOREIGN KEY (camera_id) REFERENCES cameras(id)
 );
 
-
--- ALTER TABLE cameras
--- ADD COLUMN image_width INT,
--- ADD COLUMN image_height INT;
-
--- Create table for line pairs
 CREATE TABLE line_pairs (
     id INT PRIMARY KEY AUTO_INCREMENT,
     camera_id INT NOT NULL,
@@ -60,7 +54,6 @@ CREATE TABLE line_pairs (
     FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE
 );
 
--- Create table for ROIs
 CREATE TABLE rois (
     id INT PRIMARY KEY AUTO_INCREMENT,
     camera_id INT NOT NULL,

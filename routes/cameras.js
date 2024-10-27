@@ -289,7 +289,8 @@ router.put('/cameras/:id', (req, res) => {
 });
 
 router.delete('/cameras/:id', (req, res) => {
-    const { id } = req.params;
+    const id = decodeURIComponent(req.params.id);
+    
     const query = 'DELETE FROM cameras WHERE name = ?';
     db.query(query, [id], (err, result) => {
         if (err) {
