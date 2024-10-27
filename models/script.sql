@@ -11,10 +11,10 @@ CREATE TABLE users (
 
 CREATE TABLE cameras (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    camera_id INT NOT NULL,
+    name INT NOT NULL,
     location VARCHAR(255) NOT NULL,
-    ip_address VARCHAR(255) NOT NULL,
-    status BOOLEAN DEFAULT TRUE,
+    type VARCHAR(50) NOT NULL,
+    address VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -38,3 +38,36 @@ CREATE TABLE InfractionsStats (
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (camera_id) REFERENCES cameras(id)
 );
+
+
+-- ALTER TABLE cameras
+-- ADD COLUMN image_width INT,
+-- ADD COLUMN image_height INT;
+
+-- Create table for line pairs
+CREATE TABLE line_pairs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camera_id INT NOT NULL,
+    crossing_start_x INT NOT NULL,
+    crossing_start_y INT NOT NULL,
+    crossing_end_x INT NOT NULL,
+    crossing_end_y INT NOT NULL,
+    direction_start_x INT NOT NULL,
+    direction_start_y INT NOT NULL,
+    direction_end_x INT NOT NULL,
+    direction_end_y INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
+-- Create table for ROIs
+CREATE TABLE rois (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camera_id INT NOT NULL,
+    coordinates JSON NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
+ALTER TABLE cameras
+ADD COLUMN image_data LONGTEXT AFTER type;
