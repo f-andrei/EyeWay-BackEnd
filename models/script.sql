@@ -50,6 +50,7 @@ CREATE TABLE line_pairs (
     direction_start_y INT NOT NULL,
     direction_end_x INT NOT NULL,
     direction_end_y INT NOT NULL,
+    type VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE
 );
@@ -64,3 +65,5 @@ CREATE TABLE rois (
 
 ALTER TABLE cameras
 ADD COLUMN image_data LONGTEXT AFTER type;
+
+ALTER TABLE line_pairs ADD COLUMN type VARCHAR(50) NOT NULL AFTER direction_end_y;

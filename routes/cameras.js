@@ -64,7 +64,7 @@ router.post('/cameras', (req, res) => {
 
             const linePromises = [];
             if (linePairs && linePairs.length > 0) {
-                const linePairQuery = 'INSERT INTO line_pairs (camera_id, crossing_start_x, crossing_start_y, crossing_end_x, crossing_end_y, direction_start_x, direction_start_y, direction_end_x, direction_end_y) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                const linePairQuery = 'INSERT INTO line_pairs (camera_id, crossing_start_x, crossing_start_y, crossing_end_x, crossing_end_y, direction_start_x, direction_start_y, direction_end_x, direction_end_y, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
                 
                 linePairs.forEach(pair => {
                     linePromises.push(new Promise((resolve, reject) => {
@@ -77,7 +77,8 @@ router.post('/cameras', (req, res) => {
                             pair.direction[0].x,
                             pair.direction[0].y,
                             pair.direction[1].x,
-                            pair.direction[1].y
+                            pair.direction[1].y,
+                            pair.type || 'Contagem'
                         ], (err) => {
                             if (err) reject(err);
                             else resolve();
@@ -155,7 +156,7 @@ router.get('/cameras/:id', (req, res) => {
         const camera = cameraResult[0];
         const cameraId = camera.id;
 
-        const linePairQuery = 'SELECT * FROM line_pairs WHERE camera_id = ?';
+        const linePairQuery = 'SELECT crossing_start_x, crossing_start_y, crossing_end_x, crossing_end_y, direction_start_x, direction_start_y, direction_end_x, direction_end_y, type FROM line_pairs WHERE camera_id = ?';
         db.query(linePairQuery, [cameraId], (err, lineResult) => {
             if (err) {
                 logger.error(err);
@@ -170,7 +171,8 @@ router.get('/cameras/:id', (req, res) => {
                 direction: [
                     { x: line.direction_start_x, y: line.direction_start_y },
                     { x: line.direction_end_x, y: line.direction_end_y }
-                ]
+                ],
+                type: line.type
             }));
 
             const roiQuery = 'SELECT coordinates FROM rois WHERE camera_id = ?';
@@ -204,7 +206,6 @@ router.get('/cameras/:id', (req, res) => {
     });
 });
 
-
 router.get('/cameras-line-pairs/:id', (req, res) => {
     const { id } = req.params;
     
@@ -221,7 +222,7 @@ router.get('/cameras-line-pairs/:id', (req, res) => {
         const camera = cameraResult[0];
         const cameraId = camera.id;
 
-        const linePairQuery = 'SELECT crossing_start_x, crossing_start_y, crossing_end_x, crossing_end_y, direction_start_x, direction_start_y, direction_end_x, direction_end_y FROM line_pairs WHERE camera_id = ?';
+        const linePairQuery = 'SELECT crossing_start_x, crossing_start_y, crossing_end_x, crossing_end_y, direction_start_x, direction_start_y, direction_end_x, direction_end_y, type FROM line_pairs WHERE camera_id = ?';
         db.query(linePairQuery, [cameraId], (err, lineResult) => {
             if (err) {
                 logger.error(err);
@@ -236,7 +237,8 @@ router.get('/cameras-line-pairs/:id', (req, res) => {
                 direction: [
                     { x: line.direction_start_x, y: line.direction_start_y },
                     { x: line.direction_end_x, y: line.direction_end_y }
-                ]
+                ],
+                type: line.type
             }));
 
             const response = {
