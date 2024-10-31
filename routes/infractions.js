@@ -26,21 +26,31 @@ router.post('/infractions', (req, res) => {
 });
 
 router.get('/infractions', (req, res) => {
-    const query = 'SELECT * FROM infractions ORDER BY timestamp DESC LIMIT 5';
+    const query = `
+        SELECT i.*, c.name AS camera_name, c.location AS camera_location 
+        FROM infractions i
+        JOIN cameras c ON i.camera_id = c.id
+        ORDER BY i.timestamp DESC 
+        LIMIT 5
+    `;
     
     db.query(query, (err, results) => {
         if (err) {
-            logger.error(err);
+            logger.error('Erro ao listar as infrações:', err);
             return res.status(500).json({ message: 'Erro ao listar as infrações.' });
         }
         
         const infractionsWithBase64 = results.map(infraction => {
             return {
+                infraction_id: infraction.infraction_id,
                 camera_id: infraction.camera_id,
                 vehicle_type: infraction.vehicle_type,
                 infraction_type: infraction.infraction_type,
                 timestamp: infraction.timestamp,
-                image_base64: Buffer.from(infraction.image_bytes).toString('base64') 
+                image_base64: Buffer.from(infraction.image_bytes).toString('base64'),
+                created_at: infraction.created_at,
+                camera_name: infraction.camera_name,
+                camera_location: infraction.camera_location
             };
         });
         
