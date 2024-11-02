@@ -3,101 +3,285 @@ const router = express.Router();
 const db = require('../config/connectDataBase');
 const logger = require('../logger');
 
+router.get('/statistics/summary', (req, res) => {
+    const queries = {
+        totalInfractions: `
+            SELECT COUNT(*) as total 
+            FROM infractions
+            WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        `,
+        dailyAverage: `
+            SELECT ROUND(AVG(daily_count), 0) as average
+            FROM (
+                SELECT DATE(timestamp) as date, COUNT(*) as daily_count
+                FROM infractions
+                WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY DATE(timestamp)
+            ) as daily_stats
+        `,
+        mostCommonType: `
+            SELECT infraction_type, COUNT(*) as count
+            FROM infractions
+            WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            GROUP BY infraction_type
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+        `,
+        mostCommonVehicle: `
+            SELECT vehicle_type, COUNT(*) as count
+            FROM infractions
+            WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            GROUP BY vehicle_type
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+        `
+    };
 
-router.post('/infractions-stats', (req, res) => {
-    const { camera_id, infraction_type, vehicle_type,  count, period } = req.body;
+    let results = {};
+    let completedQueries = 0;
 
-    if (!camera_id || !infraction_type || !vehicle_type || !count || !period) {
-        logger.info('Todos os campos são obrigatórios: camera_id, infraction_type, vehicle_type,  count, period.');
-        return res.status(400).json({ message: 'Todos os campos são obrigatórios: camera_id, infraction_type, vehicle_type, count, period..' });
-    }
-
-    const query = 'INSERT INTO InfractionsStats (camera_id, infraction_type, vehicle_type, count, period) VALUES (?, ?, ?, ?, ?)';
-
-    db.query(query, [camera_id, infraction_type, vehicle_type, count, period], (err, result) => {
-
-        if (err) {
-            if (err.code === 'ER_NO_REFERENCED_ROW_2') {
-                logger.info('Não existe camera_id cadastrado.');
-                return res.status(400).json({ message: 'Não existe camera_id cadastrado.' });
+    Object.entries(queries).forEach(([key, query]) => {
+        db.query(query, (err, rows) => {
+            if (err) {
+                logger.error('Error executing query:', err);
+                return res.status(500).json({ error: 'Database error' });
             }
-            logger.error(err);
-            return res.status(500).json({ message: 'Erro ao criar o Infractions Stats.' });
-        }
-        logger.info("Infractions Stats criada com sucesso!");
-        res.status(201).json({ stat_id: result.insertId });
-    });
-});
+            
+            results[key] = rows[0];
+            completedQueries++;
 
-
-router.get('/infractions-stats', (req, res) => {
-    const query = 'SELECT * FROM InfractionsStats';
-    db.query(query, (err, results) => {
-        if (err) {
-            logger.error(err);
-            return res.status(500).json(err);
-        }
-        res.status(200).json(results);
-        console.log("Estatísticas de infrações listadas com sucesso!");
-    });
-});
-
-
-router.get('/infractions-stats/:id', (req, res) => {
-    const { id } = req.params;
-    const query = 'SELECT * FROM InfractionsStats WHERE stat_id = ?';
-    db.query(query, [id], (err, result) => {
-        if (err) {
-            logger.error(err);
-            return res.status(500).json(err);
-        }
-        if (result.length === 0) return res.status(404).json({ message: 'Stat not found' });
-        res.status(200).json(result[0]);
-        console.log("Estatística de infração " + id + " listada com sucesso!");
-    });
-});
-
-
-router.put('/infractions-stats/:id', (req, res) => {
-    const { id } = req.params;
-    const { camera_id, infraction_type, vehicle_type, count, period } = req.body;
-
-    if (!camera_id || !infraction_type || !vehicle_type || !count || !period) {
-        logger.info('Todos os campos são obrigatórios: camera_id, infraction_type, vehicle_type,  count, period.');
-        return res.status(400).json({ message: 'Todos os campos são obrigatórios: camera_id, infraction_type, vehicle_type, count, period..' });
-    }
-
-    const query = 'UPDATE InfractionsStats SET camera_id = ?, infraction_type = ?, vehicle_type = ?, count = ?, period = ? WHERE stat_id = ?';
-
-    db.query(query, [camera_id, infraction_type, vehicle_type, count, period, id], (err, result) => {
-        if (err) {
-            if (err.code === 'ER_NO_REFERENCED_ROW_2') {
-                logger.info('Não existe camera_id cadastrado.');
-                return res.status(400).json({ message: 'Não existe camera_id cadastrado.' });
+            if (completedQueries === Object.keys(queries).length) {
+                res.json({
+                    totalInfractions: results.totalInfractions?.total || 0,
+                    dailyAverage: results.dailyAverage?.average || 0,
+                    mostCommonType: results.mostCommonType?.infraction_type || 'N/A',
+                    mostCommonVehicle: results.mostCommonVehicle?.vehicle_type || 'N/A'
+                });
             }
-            logger.error(err);
-            return res.status(500).json(err);
-        }
-        logger.info("Estatística de infração " + id + " atualizada com sucesso!");
-        res.status(200).json({ message: 'Stat updated' });
+        });
     });
 });
 
+router.get('/statistics/weekly', (req, res) => {
+    const query = `
+        SELECT 
+            DATE_FORMAT(date_group, '%a') as day,
+            count
+        FROM (
+            SELECT 
+                DATE(timestamp) as date_group,
+                COUNT(*) as count
+            FROM infractions
+            WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            GROUP BY DATE(timestamp)
+            ORDER BY date_group
+        ) as daily_counts
+    `;
 
-router.delete('/infractions-stats/:id', (req, res) => {
-    const { id } = req.params;
-    const query = 'DELETE FROM InfractionsStats WHERE stat_id = ?';
-    db.query(query, [id], (err, result) => {
+    db.query(query, (err, rows) => {
         if (err) {
-            logger.error(err);
-            return res.status(500).json(err);
+            logger.error('Error fetching weekly statistics:', err);
+            return res.status(500).json({ error: 'Database error' });
         }
-        logger.info("Estatística de infração " + id + " deletada com sucesso!");
-        res.status(200).json({ message: 'Stat deleted' });
+
+        try {
+            const dataMap = new Map();
+            rows.forEach(row => {
+                dataMap.set(row.day, row.count);
+            });
+
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const processedData = daysOfWeek.map(day => ({
+                day: day,
+                count: dataMap.get(day) || 0
+            }));
+
+            res.json(processedData);
+        } catch (error) {
+            logger.error('Error processing weekly statistics:', error);
+            res.status(500).json({ error: 'Data processing error' });
+        }
     });
 });
 
+router.get('/statistics/by-location', (req, res) => {
+    const query = `
+        SELECT 
+            c.id as camera_id,
+            c.name as camera_name,
+            c.location,
+            c.address,
+            COUNT(i.infraction_id) as infraction_count,
+            COUNT(DISTINCT i.vehicle_type) as unique_vehicles,
+            COUNT(DISTINCT i.infraction_type) as unique_infractions,
+            MAX(i.timestamp) as last_infraction
+        FROM cameras c
+        LEFT JOIN infractions i ON c.id = i.camera_id
+        WHERE i.timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY c.id, c.name, c.location, c.address
+        ORDER BY infraction_count DESC
+    `;
 
-   
+    db.query(query, (err, rows) => {
+        if (err) {
+            logger.error('Error fetching location statistics:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(rows);
+    });
+});
+
+router.get('/statistics/vehicle-types', (req, res) => {
+    const query = `
+        SELECT 
+            vehicle_type,
+            COUNT(*) as count
+        FROM infractions
+        WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY vehicle_type
+        ORDER BY COUNT(*) DESC
+    `;
+
+    db.query(query, (err, rows) => {
+        if (err) {
+            logger.error('Error fetching vehicle type statistics:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        const mainVehicleTypes = ['Carro', 'Moto', 'Caminhão', 'Ônibus'];
+        const resultMap = new Map(rows.map(row => [row.vehicle_type, row.count]));
+        
+        const completeData = mainVehicleTypes.map(type => ({
+            vehicle_type: type,
+            count: resultMap.get(type) || 0
+        }));
+
+        res.json(completeData);
+    });
+});
+
+router.get('/statistics/hourly-by-location', (req, res) => {
+    const query = `
+        SELECT 
+            c.location,
+            HOUR(i.timestamp) as hour,
+            COUNT(*) as count
+        FROM cameras c
+        JOIN infractions i ON c.id = i.camera_id
+        WHERE i.timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY c.location, HOUR(i.timestamp)
+        ORDER BY c.location, hour
+    `;
+
+    db.query(query, (err, rows) => {
+        if (err) {
+            logger.error('Error fetching hourly statistics by location:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        const locations = [...new Set(rows.map(row => row.location))];
+        const result = {};
+
+        locations.forEach(location => {
+            result[location] = Array(24).fill(0);
+            rows
+                .filter(row => row.location === location)
+                .forEach(row => {
+                    result[location][row.hour] = row.count;
+                });
+        });
+
+        res.json(result);
+    });
+});
+
+router.get('/statistics/vehicle-types-by-location', (req, res) => {
+    const query = `
+        SELECT 
+            c.location,
+            i.vehicle_type,
+            COUNT(*) as count
+        FROM cameras c
+        JOIN infractions i ON c.id = i.camera_id
+        WHERE i.timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY c.location, i.vehicle_type
+        ORDER BY c.location, count DESC
+    `;
+
+    db.query(query, (err, rows) => {
+        if (err) {
+            logger.error('Error fetching vehicle types by location:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        const result = {};
+        rows.forEach(row => {
+            if (!result[row.location]) {
+                result[row.location] = [];
+            }
+            result[row.location].push({
+                vehicle_type: row.vehicle_type,
+                count: row.count
+            });
+        });
+
+        res.json(result);
+    });
+});
+
+router.get('/statistics/camera-details/:cameraId', (req, res) => {
+    const { cameraId } = req.params;
+    const queries = {
+        info: `
+            SELECT c.*, 
+                COUNT(i.infraction_id) as total_infractions,
+                COUNT(DISTINCT DATE(i.timestamp)) as active_days
+            FROM cameras c
+            LEFT JOIN infractions i ON c.id = i.camera_id
+            WHERE c.id = ?
+            GROUP BY c.id
+        `,
+        vehicleTypes: `
+            SELECT vehicle_type, COUNT(*) as count
+            FROM infractions
+            WHERE camera_id = ?
+            GROUP BY vehicle_type
+            ORDER BY count DESC
+        `,
+        infractionTypes: `
+            SELECT infraction_type, COUNT(*) as count
+            FROM infractions
+            WHERE camera_id = ?
+            GROUP BY infraction_type
+            ORDER BY count DESC
+        `,
+        hourlyDistribution: `
+            SELECT HOUR(timestamp) as hour, COUNT(*) as count
+            FROM infractions
+            WHERE camera_id = ?
+            GROUP BY HOUR(timestamp)
+            ORDER BY hour
+        `
+    };
+
+    let results = {};
+    let completedQueries = 0;
+
+    Object.entries(queries).forEach(([key, query]) => {
+        db.query(query, [cameraId], (err, rows) => {
+            if (err) {
+                logger.error(`Error executing ${key} query:`, err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+
+            results[key] = key === 'info' ? rows[0] : rows;
+            completedQueries++;
+
+            if (completedQueries === Object.keys(queries).length) {
+                res.json(results);
+            }
+        });
+    });
+});
 
 module.exports = router;
