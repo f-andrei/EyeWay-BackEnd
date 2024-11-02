@@ -67,3 +67,12 @@ ALTER TABLE cameras
 ADD COLUMN image_data LONGTEXT AFTER type;
 
 ALTER TABLE line_pairs ADD COLUMN type VARCHAR(50) NOT NULL AFTER direction_end_y;
+
+CREATE TABLE objects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    camera_id INT NOT NULL,
+    class_label VARCHAR(50) NOT NULL,
+    timestamp DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camera_id) REFERENCES cameras(id)
+);
