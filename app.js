@@ -8,6 +8,8 @@ const userRoutes = require('./routes/users');
 const cameraRoutes = require('./routes/cameras');
 const infractionRoutes = require('./routes/infractions');
 const infractionsStatsRoutes = require('./routes/infractionsStats');
+const objectsRoutes = require('./routes/objects');
+const objectStatsRoutes = require('./routes/objectStats');
 
 app.use(cors())
 app.use(express.json({limit: '50mb'}));
@@ -15,6 +17,8 @@ app.use('/', userRoutes);
 app.use('/', cameraRoutes);
 app.use('/', infractionRoutes);
 app.use('/', infractionsStatsRoutes);
+app.use('/', objectsRoutes);
+app.use('/', objectStatsRoutes);
 
 const PORT = 3000;
 
