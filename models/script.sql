@@ -11,9 +11,10 @@ CREATE TABLE users (
 
 CREATE TABLE cameras (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
     location VARCHAR(255) NOT NULL,
     type VARCHAR(50) NOT NULL,
+    image_data LONGTEXT,
     address VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -25,7 +26,8 @@ CREATE TABLE infractions (
     infraction_type VARCHAR(50) NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     image_bytes LONGBLOB NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camera_id) REFERENCES cameras(id)
 );
 
 CREATE TABLE InfractionsStats (
@@ -63,11 +65,6 @@ CREATE TABLE rois (
     FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE
 );
 
-ALTER TABLE cameras
-ADD COLUMN image_data LONGTEXT AFTER type;
-
-ALTER TABLE line_pairs ADD COLUMN type VARCHAR(50) NOT NULL AFTER direction_end_y;
-
 CREATE TABLE objects (
     id INT AUTO_INCREMENT PRIMARY KEY,
     camera_id INT NOT NULL,
@@ -76,3 +73,7 @@ CREATE TABLE objects (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (camera_id) REFERENCES cameras(id)
 );
+
+ALTER TABLE cameras
+ADD COLUMN image_width INT NOT NULL,
+ADD COLUMN image_height INT NOT NULL;
