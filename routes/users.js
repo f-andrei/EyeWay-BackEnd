@@ -12,6 +12,10 @@ router.post('/users', (req, res) => {
         logger.info('Todos os campos são obrigatórios: nome, email, senha.');
         return res.status(400).json({ message: 'Todos os campos são obrigatórios: nome, email, senha.' });
     }
+    
+    if(senha.length < 4 && !(/\d/.test(senha))){
+        return res.status(400).json({ message: 'Senha muito fraca. Necessario ser maior que 4 caracteres com numeros e letras' });
+    }
 
     const hash = crypto.createHash("sha256")
     const password_hash = hash.update(senha).digest("hex");
