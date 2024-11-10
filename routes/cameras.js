@@ -143,7 +143,7 @@ router.get('/cameras', (req, res) => {
 router.get('/cameras/:id', (req, res) => {
     const { id } = req.params;
     
-    const cameraQuery = 'SELECT * FROM cameras WHERE name = ?';
+    const cameraQuery = 'SELECT * FROM cameras WHERE id = ?';
     db.query(cameraQuery, [id], (err, cameraResult) => {
         if (err) {
             logger.error(err);
@@ -274,7 +274,7 @@ router.put('/cameras/:id', (req, res) => {
         });
     }
 
-    const query = 'UPDATE cameras SET name = ?, location = ?, address = ?, type = ? WHERE name = ?';
+    const query = 'UPDATE cameras SET name = ?, location = ?, address = ?, type = ? WHERE id = ?';
     db.query(query, [name, location, address, type, id], (err, result) => {
         if (err) {
             logger.error(err);
