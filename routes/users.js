@@ -58,7 +58,8 @@ router.post('/login', (req, res) => {
         
         const jwt = await new jose.SignJWT({email}).setExpirationTime("1d").setProtectedHeader({alg:"HS256"}).sign(secret);
         logger.info("Usuário " + " Logado com sucesso!");
-        res.status(201).json({ token:jwt });
+        res.status(201).json({ token:jwt, user_id:result[0].user_id });
+        console.log(result)
     });
 });
 
