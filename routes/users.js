@@ -55,7 +55,7 @@ router.post('/login', (req, res) => {
 
     db.query(query, [ email, password_hash], async (err, result) => {
         console.log(email,password_hash,err);
-        if (err) {
+        if (err || !result.length)  {
             logger.error(err);
             return res.status(500).json({ message: 'Email ou senha está incorreto.' });
         }
