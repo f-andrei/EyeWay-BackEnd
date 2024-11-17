@@ -71,9 +71,29 @@ CREATE TABLE objects (
     class_label VARCHAR(50) NOT NULL,
     timestamp DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (camera_id) REFERENCES cameras(id)
+    FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE;
 );
 
 ALTER TABLE cameras
 ADD COLUMN image_width INT NOT NULL,
 ADD COLUMN image_height INT NOT NULL;
+
+
+ALTER TABLE objects 
+DROP FOREIGN KEY objects_ibfk_1;
+
+ALTER TABLE objects
+ADD CONSTRAINT objects_ibfk_1 
+FOREIGN KEY (camera_id) 
+REFERENCES cameras(id) 
+ON DELETE CASCADE;
+
+
+-- Add name field to line_pairs table
+ALTER TABLE line_pairs
+ADD COLUMN name VARCHAR(100) NOT NULL AFTER type;
+
+-- Add name and type fields to rois table
+ALTER TABLE rois
+ADD COLUMN name VARCHAR(100) NOT NULL AFTER camera_id,
+ADD COLUMN type ENUM('Presença', 'Cruzamento') NOT NULL AFTER name;
