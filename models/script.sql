@@ -97,3 +97,18 @@ ADD COLUMN name VARCHAR(100) NOT NULL AFTER type;
 ALTER TABLE rois
 ADD COLUMN name VARCHAR(100) NOT NULL AFTER camera_id,
 ADD COLUMN type ENUM('Presença', 'Cruzamento') NOT NULL AFTER name;
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- Modify the status column with new ENUM values
+ALTER TABLE infractions 
+    MODIFY COLUMN status ENUM('Pendente', 'Verificado', 'Alerta falso') 
+    NOT NULL DEFAULT 'Pendente';
+
+-- Update any existing values if needed
+UPDATE infractions SET status = 'Pendente' WHERE status = 'pending' OR status = 'PENDENTE';
+UPDATE infractions SET status = 'Verificado' WHERE status = 'confirmed' OR status = 'VERIFICADO';
+UPDATE infractions SET status = 'Alerta falso' WHERE status = 'rejected' OR status = 'ALERTA_FALSO';
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS=1;
