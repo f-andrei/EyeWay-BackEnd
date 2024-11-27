@@ -6,7 +6,6 @@ const logger = require('../logger');
 router.post('/manualInfractions', (req, res) => {
     const { date, user, image, text } = req.body;
 
-    // Validação simples para evitar erros de desestruturação
     if (!date || !user || !image || !text) {
         return res.status(400).json({ message: 'Todos os campos são obrigatórios.' });
     }
