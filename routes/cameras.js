@@ -325,12 +325,22 @@ router.get('/cameras-line-pairs/:id', (req, res) => {
 
 router.put('/cameras/:id', (req, res) => {
     const { id } = req.params;
-    const { name, location, address, type } = req.body;
+    const { 
+        name, 
+        location, 
+        address, 
+        type,
+        imageSize,
+        imageData,      
+        linePairs,      
+        rois           
+    } = req.body;
 
-    if (!name || !location || !address || !type) {
-        logger.info('Todos os campos são obrigatórios: name (nome), location (local), address (url), type.');
+    // Validate required fields
+    if (!name || !location || !address || !type || !imageSize || !imageData) {
+        logger.info('Todos os campos são obrigatórios: name, location, address, type, imageSize, imageData');
         return res.status(400).json({ 
-            message: 'Todos os campos são obrigatórios: nome, local, url e type.' 
+            message: 'Todos os campos são obrigatórios: name, location, address, type, imageSize, imageData' 
         });
     }
 
@@ -342,19 +352,171 @@ router.put('/cameras/:id', (req, res) => {
         });
     }
 
-    const query = 'UPDATE cameras SET name = ?, location = ?, address = ?, type = ? WHERE id = ?';
-    db.query(query, [name, location, address, type, id], (err, result) => {
+    if (!imageData.match(/^data:image\/(jpeg|png|gif);base64,/)) {
+        logger.info('Formato de imagem inválido. Deve ser base64 com cabeçalho data:image');
+        return res.status(400).json({ 
+            message: 'Formato de imagem inválido. Deve ser base64 com cabeçalho data:image' 
+        });
+    }
+
+    // Validate linePairs and ROIs before starting transaction
+    if (linePairs && linePairs.length > 0) {
+        const invalidLine = linePairs.find(pair => !pair.name);
+        // if (invalidLine) {
+        //     logger.info('Nome da linha é obrigatório.');
+        //     return res.status(400).json({ message: 'Nome da linha é obrigatório.' });
+        // }
+    }
+
+    if (rois && rois.length > 0) {
+        const invalidRoi = rois.find(roi => !roi.name || !roi.type);
+        if (invalidRoi) {
+            logger.info('Nome e tipo são obrigatórios para cada região de interesse.');
+            return res.status(400).json({ 
+                message: 'Nome e tipo são obrigatórios para cada região de interesse.' 
+            });
+        }
+    }
+
+    db.beginTransaction(err => {
         if (err) {
             logger.error(err);
-            return res.status(500).json({ message: 'Erro ao atualizar a câmera.' });
-        }
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Câmera não encontrada' });
+            return res.status(500).json({ message: 'Erro ao iniciar transação.' });
         }
 
-        logger.info("Câmera " + id + " atualizada com sucesso!");
-        res.status(200).json({ message: 'Câmera atualizada com sucesso' });
+        // Update camera basic info
+        const cameraQuery = `
+            UPDATE cameras 
+            SET name = ?, location = ?, address = ?, type = ?, 
+                image_data = ?, image_width = ?, image_height = ? 
+            WHERE id = ?`;
+
+        db.query(cameraQuery, [
+            name, 
+            location, 
+            address, 
+            type,
+            imageData,
+            imageSize.width, 
+            imageSize.height,
+            id
+        ], (err, result) => {
+            if (err) {
+                return db.rollback(() => {
+                    logger.error(err);
+                    res.status(500).json({ message: 'Erro ao atualizar a câmera.' });
+                });
+            }
+
+            if (result.affectedRows === 0) {
+                return db.rollback(() => {
+                    res.status(404).json({ message: 'Câmera não encontrada' });
+                });
+            }
+
+            // Delete existing line pairs and ROIs
+            const deleteQueries = [
+                'DELETE FROM line_pairs WHERE camera_id = ?',
+                'DELETE FROM rois WHERE camera_id = ?'
+            ];
+
+            Promise.all(deleteQueries.map(query => 
+                new Promise((resolve, reject) => {
+                    db.query(query, [id], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+                })
+            ))
+            .then(() => {
+                const promises = [];
+
+                // Insert new line pairs
+                if (linePairs && linePairs.length > 0) {
+                    const linePairQuery = `
+                        INSERT INTO line_pairs (
+                            camera_id, 
+                            crossing_start_x, crossing_start_y, 
+                            crossing_end_x, crossing_end_y, 
+                            direction_start_x, direction_start_y, 
+                            direction_end_x, direction_end_y, 
+                            type,
+                            name
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                    
+                    linePairs.forEach(pair => {
+                        promises.push(new Promise((resolve, reject) => {
+                            db.query(linePairQuery, [
+                                id,
+                                pair.crossing[0].x,
+                                pair.crossing[0].y,
+                                pair.crossing[1].x,
+                                pair.crossing[1].y,
+                                pair.direction[0].x,
+                                pair.direction[0].y,
+                                pair.direction[1].x,
+                                pair.direction[1].y,
+                                pair.type || 'Contagem',
+                                pair.name
+                            ], (err) => {
+                                if (err) reject(err);
+                                else resolve();
+                            });
+                        }));
+                    });
+                }
+
+                // Insert new ROIs
+                if (rois && rois.length > 0) {
+                    const roiQuery = 'INSERT INTO rois (camera_id, name, type, coordinates) VALUES (?, ?, ?, ?)';
+                    
+                    rois.forEach(roi => {
+                        promises.push(new Promise((resolve, reject) => {
+                            const coordinatesJson = JSON.stringify(roi.points || roi);
+                            db.query(roiQuery, [
+                                id, 
+                                roi.name,
+                                roi.type,
+                                coordinatesJson
+                            ], (err) => {
+                                if (err) reject(err);
+                                else resolve();
+                            });
+                        }));
+                    });
+                }
+
+                // Execute all insert promises
+                Promise.all(promises)
+                    .then(() => {
+                        db.commit(err => {
+                            if (err) {
+                                return db.rollback(() => {
+                                    logger.error(err);
+                                    res.status(500).json({ message: 'Erro ao salvar configurações.' });
+                                });
+                            }
+                            logger.info("Câmera " + id + " atualizada com sucesso!");
+                            res.status(200).json({ 
+                                id: id,
+                                message: 'Câmera atualizada com sucesso'
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        db.rollback(() => {
+                            logger.error(err);
+                            res.status(500).json({ message: 'Erro ao salvar configurações.' });
+                        });
+                    });
+            })
+            .catch(err => {
+                db.rollback(() => {
+                    logger.error(err);
+                    res.status(500).json({ message: 'Erro ao limpar configurações antigas.' });
+                });
+            });
+        });
     });
 });
 
