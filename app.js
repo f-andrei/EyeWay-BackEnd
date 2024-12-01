@@ -10,6 +10,7 @@ const infractionRoutes = require('./routes/infractions');
 const infractionsStatsRoutes = require('./routes/infractionsStats');
 const objectsRoutes = require('./routes/objects');
 const objectStatsRoutes = require('./routes/objectStats');
+const manualInfractionsRoutes = require('./routes/manualInfractions');
 
 app.use(cors())
 app.use(express.json({limit: '50mb'}));
@@ -19,6 +20,7 @@ app.use('/', infractionRoutes);
 app.use('/', infractionsStatsRoutes);
 app.use('/', objectsRoutes);
 app.use('/', objectStatsRoutes);
+app.use('/', manualInfractionsRoutes);
 
 const PORT = 3000;
 

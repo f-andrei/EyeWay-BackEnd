@@ -1,3 +1,4 @@
+-- Active: 1719289367781@@127.0.0.1@3306
 CREATE SCHEMA `EyeWay` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
 USE `EyeWay`;
 
@@ -112,3 +113,20 @@ UPDATE infractions SET status = 'Alerta falso' WHERE status = 'rejected' OR stat
 
 -- Re-enable foreign key checks
 SET FOREIGN_KEY_CHECKS=1;
+
+CREATE TABLE manual_infractions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    date DATE NOT NULL,
+    user INT NOT NULL,
+    image LONGBLOB NOT NULL,
+    text VARCHAR(255),
+    status ENUM('Estacionamento em frente ao portão',
+    'Estacionado em vaga de carga e descarga',
+    'Estacionado em vaga PCD sem carteirinha',
+    'Estacionado em vaga 60+ sem carteirinha',
+    'Estacionado na contra mão',
+    'Estacionado em cima de calçada',
+    'Outro') NOT NULL DEFAULT 'Outro',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user) REFERENCES users(user_id)
+);
