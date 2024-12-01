@@ -120,5 +120,13 @@ CREATE TABLE manual_infractions (
     user INT NOT NULL,
     image LONGBLOB NOT NULL,
     text VARCHAR(255),
+    status ENUM('Estacionamento em frente ao portão',
+    'Estacionado em vaga de carga e descarga',
+    'Estacionado em vaga PCD sem carteirinha',
+    'Estacionado em vaga 60+ sem carteirinha',
+    'Estacionado na contra mão',
+    'Estacionado em cima de calçada',
+    'Outro') NOT NULL DEFAULT 'Outro',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user) REFERENCES users(user_id)
 );
