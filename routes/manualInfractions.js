@@ -4,16 +4,39 @@ const db = require('../config/connectDataBase');
 const logger = require('../logger');
 
 router.post('/manualInfractions', (req, res) => {
-    const { date, user, image, text } = req.body;
+    const { date, user, adress, image, text, status, camera_id, vehicle_type, infraction_type } = req.body;
 
-    if (!date || !user || !image || !text) {
-        return res.status(400).json({ message: 'Todos os campos são obrigatórios.' });
+    const requiredFields = {
+        date: date,
+        user: user,
+        adress: adress,
+        image: image,
+        text: text,
+        status: status,
+        vehicle_type: vehicle_type,
+        infraction_type: infraction_type
+    };
+
+    const missingFields = Object.entries(requiredFields)
+        .filter(([key, value]) => !value)
+        .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+        return res.status(400).json({ 
+            message: `Campos obrigatórios faltando: ${missingFields.join(', ')}` 
+        });
     }
 
     const imageBuffer = Buffer.from(image, 'base64');
 
-    const query = 'INSERT INTO manual_Infractions (date, user, image, text) VALUES (?, ?, ?, ?)';
-    db.query(query, [date, user, imageBuffer, text], (err, result) => {
+    const query = `INSERT INTO manual_Infractions 
+        (date, user, adress, image, text, status, camera_id, vehicle_type, infraction_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    db.query(query, [
+        date, user, adress, imageBuffer, text, status, 
+        camera_id || -1, vehicle_type, infraction_type
+    ], (err, result) => {
         if (err) {
             logger.error('Erro ao criar a infração:', err);
             return res.status(500).json({ message: 'Erro ao criar a infração.' });
@@ -63,11 +86,12 @@ router.get('/manualInfractions/:id', (req, res) => {
 
 router.put('/manualInfractions/:id', (req, res) => {
     const { id } = req.params;
-    const { date, user, image, text } = req.body;
+    const { date, user, adress, image, text, status, vehicle_type, infraction_type } = req.body;
 
-    const query = 'UPDATE manual_Infractions SET date = ?, user = ?, image = ?, text = ? WHERE id = ?';
+    const query = `UPDATE manual_Infractions SET date = ?, user = ?, adress = ?, image = ?,
+    text = ?, status = ?, camera_id = -1, vehicle_type = ?, infraction_type = ? WHERE id = ?`;
 
-    db.query(query, [date, user, image, text, id], (err) => {
+    db.query(query, [date, user, adress, image, text, id, status, vehicle_type, infraction_type], (err) => {
         if (err) {
             logger.error(`Error updating infraction: ${id}`, err);
             return res.status(500).json({ message: 'Erro ao atualizar a infração.' });

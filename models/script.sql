@@ -1,4 +1,3 @@
--- Active: 1719289367781@@127.0.0.1@3306
 CREATE SCHEMA `EyeWay` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
 USE `EyeWay`;
 
@@ -72,7 +71,7 @@ CREATE TABLE objects (
     class_label VARCHAR(50) NOT NULL,
     timestamp DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE;
+    FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE
 );
 
 ALTER TABLE cameras
@@ -115,18 +114,16 @@ UPDATE infractions SET status = 'Alerta falso' WHERE status = 'rejected' OR stat
 SET FOREIGN_KEY_CHECKS=1;
 
 CREATE TABLE manual_infractions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_manual INT AUTO_INCREMENT PRIMARY KEY,
     date DATE NOT NULL,
-    user INT NOT NULL,
+    user VARCHAR(50) NOT NULL,
+    adress VARCHAR(255) NOT NULL,
     image LONGBLOB NOT NULL,
     text VARCHAR(255),
-    status ENUM('Estacionamento em frente ao portão',
-    'Estacionado em vaga de carga e descarga',
-    'Estacionado em vaga PCD sem carteirinha',
-    'Estacionado em vaga 60+ sem carteirinha',
-    'Estacionado na contra mão',
-    'Estacionado em cima de calçada',
-    'Outro') NOT NULL DEFAULT 'Outro',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user) REFERENCES users(user_id)
+    status ENUM('Pendente', 'Verificado', 'Alerta falso') 
+    NOT NULL DEFAULT 'Pendente',
+    camera_id INT NOT NULL,
+    vehicle_type VARCHAR(50) NOT NULL,
+    infraction_type VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
