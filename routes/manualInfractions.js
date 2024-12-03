@@ -57,6 +57,8 @@ router.get('/manualInfractions', (req, res) => {
             logger.error('Error listing infractions:', err);
             return res.status(500).json({ message: 'Erro ao listar as infrações.' });
         }
+        console.log('Resultados retornados:', results); // Verificar retorno no terminal
+
         if (results.length === 0){
             return res.status(404).json({ message: 'Infractions not found' });
         }
@@ -88,10 +90,12 @@ router.put('/manualInfractions/:id', (req, res) => {
     const { id } = req.params;
     const { date, user, adress, image, text, status, vehicle_type, infraction_type } = req.body;
 
-    const query = `UPDATE manual_Infractions SET date = ?, user = ?, adress = ?, image = ?,
-    text = ?, status = ?, camera_id = -1, vehicle_type = ?, infraction_type = ? WHERE id = ?`;
+    const query = `
+        UPDATE manual_Infractions SET date = ?, user = ?, adress = ?, image = ?, 
+        text = ?, status = ?, camera_id = -1, vehicle_type = ?, infraction_type = ? WHERE id = ?
+    `;
 
-    db.query(query, [date, user, adress, image, text, id, status, vehicle_type, infraction_type], (err) => {
+    db.query(query, [date, user, adress, image, text, status, vehicle_type, infraction_type, id], (err) => {
         if (err) {
             logger.error(`Error updating infraction: ${id}`, err);
             return res.status(500).json({ message: 'Erro ao atualizar a infração.' });
@@ -100,6 +104,7 @@ router.put('/manualInfractions/:id', (req, res) => {
         res.status(200).json({ message: 'Infraction updated' });
     });
 });
+
 
 router.delete('/manualInfractions', (req, res) => {
     const { id } = req.params;
@@ -116,22 +121,5 @@ router.delete('/manualInfractions', (req, res) => {
         res.status(200).json({ message: 'Infractions deleted' });
     });
 });
-
-router.delete('/manualInfractions/:id', (req, res) => {
-    const { id } = req.params;
-    const query = 'DELETE FROM manual_Infractions WHERE id = ?';
-    db.query(query, [id], (err, results) => {
-        if (err) {
-            logger.error(`Error deleting infraction: ${id}`, err);
-            return res.status(500).json({ message: 'Erro ao deletar a infração.' });
-        }
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ message: 'Infraction not found' });
-        }
-        logger.info(`Infração ${id} deletada com sucesso!`);
-        res.status(200).json({ message: 'Infraction deleted' });
-    });
-});
-
 
 module.exports = router;
