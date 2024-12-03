@@ -71,7 +71,7 @@ router.get('/manualInfractions/:id', (req, res) => {
     const { id } = req.params;
     
     const query = `
-        SELECT * FROM manual_Infractions WHERE id = ?
+        SELECT * FROM manual_Infractions WHERE id_manual = ?
     `;
     db.query(query, [id], (err, results) => {
         if (err) {
@@ -90,12 +90,37 @@ router.put('/manualInfractions/:id', (req, res) => {
     const { id } = req.params;
     const { date, user, adress, image, text, status, vehicle_type, infraction_type } = req.body;
 
-    const query = `
-        UPDATE manual_Infractions SET date = ?, user = ?, adress = ?, image = ?, 
-        text = ?, status = ?, camera_id = -1, vehicle_type = ?, infraction_type = ? WHERE id = ?
-    `;
+    let imageBuffer;
+    if (image) {
+        if (image.includes('base64,')) {
+            imageBuffer = Buffer.from(image.split('base64,')[1], 'base64');
+        } else {
+            imageBuffer = Buffer.from(image, 'base64');
+        }
+    }
 
-    db.query(query, [date, user, adress, image, text, status, vehicle_type, infraction_type, id], (err) => {
+    let query, params;
+    if (image) {
+        query = `
+            UPDATE manual_Infractions 
+            SET date = ?, user = ?, adress = ?, image = ?, 
+                text = ?, status = ?, camera_id = -1, 
+                vehicle_type = ?, infraction_type = ? 
+            WHERE id_manual = ?
+        `;
+        params = [date, user, adress, imageBuffer, text, status, vehicle_type, infraction_type, id];
+    } else {
+        query = `
+            UPDATE manual_Infractions 
+            SET date = ?, user = ?, adress = ?, 
+                text = ?, status = ?, camera_id = -1, 
+                vehicle_type = ?, infraction_type = ? 
+            WHERE id_manual = ?
+        `;
+        params = [date, user, adress, text, status, vehicle_type, infraction_type, id];
+    }
+
+    db.query(query, params, (err) => {
         if (err) {
             logger.error(`Error updating infraction: ${id}`, err);
             return res.status(500).json({ message: 'Erro ao atualizar a infração.' });
@@ -106,19 +131,19 @@ router.put('/manualInfractions/:id', (req, res) => {
 });
 
 
-router.delete('/manualInfractions', (req, res) => {
+router.delete('/manualInfractions/:id', (req, res) => {
     const { id } = req.params;
-    const query = 'DELETE FROM manual_Infractions';
+    const query = 'DELETE FROM manual_Infractions WHERE id_manual = ?';
     db.query(query, [id], (err, results) => {
         if (err) {
-            logger.error(`Error deleting infractions`, err);
-            return res.status(500).json({ message: 'Erro ao deletar a infrações.' });
+            logger.error(`Error deleting infraction: ${id}`, err);
+            return res.status(500).json({ message: 'Erro ao deletar a infração.' });
         }
         if (results.affectedRows === 0) {
-            return res.status(404).json({ message: 'Infractions not found' });
+            return res.status(404).json({ message: 'Infraction not found' });
         }
-        logger.info(`Infrações deletadas com sucesso!`);
-        res.status(200).json({ message: 'Infractions deleted' });
+        logger.info(`Infração ${id} deletada com sucesso!`);
+        res.status(200).json({ message: 'Infraction deleted' });
     });
 });
 
